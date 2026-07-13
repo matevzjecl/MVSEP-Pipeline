@@ -11,8 +11,7 @@ from pipeline import run_pipeline
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "MVSEP pipeline: URL/local input -> BS Roformer SW -> Lead/Rhythm Guitar "
-            "-> Karaoke lead/back -> local checks"
+            "MVSEP pipeline with basic-only, normal, add-choir, and choir-only modes."
         )
     )
 
@@ -39,7 +38,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--reuse-existing",
         action="store_true",
-        help="Reuse existing downloaded/stage files instead of creating new jobs",
+        help="Reuse existing temporary stage files from an interrupted run",
     )
     parser.add_argument(
         "--allow-premium",
@@ -51,10 +50,29 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Always export L/R for stereo guitar stems, even if stereo width looks weak",
     )
-    parser.add_argument(
-        "--satb",
+
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument(
+        "--basic-only",
+        "--basic_only",
+        dest="basic_only",
         action="store_true",
-        help="Also run optional SATB choir model on vocals.wav",
+        help="Run only the first BS Roformer SW separation and stop",
+    )
+    mode_group.add_argument(
+        "--add-choir",
+        "--add_choir",
+        "--satb",
+        dest="add_choir",
+        action="store_true",
+        help="Run the normal pipeline and additionally split vocals into SATB choir stems",
+    )
+    mode_group.add_argument(
+        "--choir-only",
+        "--choir_only",
+        dest="choir_only",
+        action="store_true",
+        help="Create only SATB choir stems; primary vocals extraction is temporary",
     )
 
     return parser.parse_args()
