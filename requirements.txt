@@ -3,3 +3,4 @@ numpy
 soundfile
 python-dotenv
 yt-dlp
+imageio-ffmpeg

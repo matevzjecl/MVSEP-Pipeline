@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, unquote, urlparse
 
+import imageio_ffmpeg
 from yt_dlp import YoutubeDL
 
 from config import AUDIO_EXTS
@@ -47,8 +48,7 @@ def audio_files(folder: Path) -> list[Path]:
         return []
 
     return sorted(
-        p for p in folder.rglob("*")
-        if p.is_file() and p.suffix.lower() in AUDIO_EXTS
+        p for p in folder.rglob("*") if p.is_file() and p.suffix.lower() in AUDIO_EXTS
     )
 
 
@@ -90,12 +90,6 @@ def download_best_audio_from_url(
     download_dir: Path,
     reuse_existing: bool,
 ) -> Path:
-    if shutil.which("ffmpeg") is None:
-        raise RuntimeError(
-            "FFmpeg was not found in PATH. Install FFmpeg first, then retry. "
-            "yt-dlp needs FFmpeg to extract audio from links."
-        )
-
     download_dir.mkdir(parents=True, exist_ok=True)
 
     existing = audio_files(download_dir)
@@ -103,6 +97,10 @@ def download_best_audio_from_url(
         existing.sort(key=lambda p: p.stat().st_mtime, reverse=True)
         print(f"\nReusing existing downloaded audio: {existing[0]}")
         return existing[0]
+
+    # Use the FFmpeg executable bundled with imageio-ffmpeg.
+    # No system-wide installation or PATH modification is required.
+    ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
 
     before = {p.resolve() for p in audio_files(download_dir)}
 
@@ -112,6 +110,7 @@ def download_best_audio_from_url(
         "noplaylist": True,
         "quiet": False,
         "no_warnings": False,
+        "ffmpeg_location": ffmpeg_path,
         "postprocessors": [
             {
                 "key": "FFmpegExtractAudio",
